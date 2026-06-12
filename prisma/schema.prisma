@@ -1,0 +1,259 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  displayName  String   @map("display_name")
+  role         UserRole @default(USER)
+  preferences  Json?    @map("preferences")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  sessions  Session[]
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+
+model Session {
+  id                  String        @id @default(uuid())
+  userId              String        @map("user_id")
+  ipAddress           String        @map("ip_address")
+  userAgent           String        @map("user_agent")
+  state               SessionState  @default(ACTIVE)
+  riskLevel           RiskLevel     @default(LOW)
+  packetCount         Int           @default(0) @map("packet_count")
+  lastActivityAt      DateTime?     @map("last_activity_at")
+  currentRoute        String?       @map("current_route")
+  isMonitoringActive  Boolean       @default(true) @map("is_monitoring_active")
+  startedAt           DateTime      @default(now()) @map("started_at")
+  endedAt             DateTime?     @map("ended_at")
+
+  // Phase 4 — Adaptive risk fields
+  lastIsolationScore  Float?        @map("last_isolation_score")
+  lastDriftScore      Float?        @map("last_drift_score")
+  lastCombinedScore   Float?        @map("last_combined_score")
+  lastRiskEvaluatedAt DateTime?     @map("last_risk_evaluated_at")
+  stepUpRequired      Boolean       @default(false) @map("step_up_required")
+  revokedAt           DateTime?     @map("revoked_at")
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  behaviouralData  BehaviouralData[]
+  baselineModels   BaselineModel[]
+  riskAssessments  RiskAssessment[]
+  auditLogs        AuditLog[]
+  experiments      Experiment[]
+
+  @@index([userId])
+  @@index([state])
+  @@map("sessions")
+}
+
+model BehaviouralData {
+  id                    String   @id @default(uuid())
+  sessionId             String   @map("session_id")
+  packetId              String   @map("packet_id")
+  packetSequence        Int      @map("packet_sequence")
+  packetWindowStart     DateTime @map("packet_window_start")
+  packetWindowEnd       DateTime @map("packet_window_end")
+  currentRoute          String?  @map("current_route")
+  keystrokeMetricsJson  Json     @map("keystroke_metrics")
+  mouseMetricsJson      Json     @map("mouse_metrics")
+  navigationMetricsJson Json     @map("navigation_metrics")
+  featureSummaryJson    Json     @map("feature_summary")
+  featureVectorJson     Json?    @map("feature_vector")
+  receivedAt            DateTime @default(now()) @map("received_at")
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([receivedAt])
+  @@index([packetSequence])
+  @@map("behavioural_data")
+}
+
+model BaselineModel {
+  id                String           @id @default(uuid())
+  sessionId         String           @map("session_id")
+  baselineStatus    BaselineStatus   @default(COLLECTING) @map("baseline_status")
+  packetsUsed       Int              @default(0) @map("packets_used")
+  featureMeansJson  Json?            @map("feature_means")
+  featureStdJson    Json?            @map("feature_std")
+  featureRangesJson Json?            @map("feature_ranges")
+  establishedAt     DateTime?        @map("established_at")
+  createdAt         DateTime         @default(now()) @map("created_at")
+
+  // Phase 4 — ML model lifecycle
+  mlModelStatus     MLModelStatus    @default(NOT_TRAINED) @map("ml_model_status")
+  mlModelId         String?          @map("ml_model_id")
+  mlModelTrainedAt  DateTime?        @map("ml_model_trained_at")
+  mlTrainingError   String?          @map("ml_training_error")
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId])
+  @@index([sessionId])
+  @@map("baseline_models")
+}
+
+enum MLModelStatus {
+  NOT_TRAINED
+  TRAINING
+  TRAINED
+  FAILED
+}
+
+model RiskAssessment {
+  id              String     @id @default(uuid())
+  sessionId       String     @map("session_id")
+  isolationScore  Float      @map("isolation_score")
+  driftScore      Float      @map("drift_score")
+  combinedScore   Float      @map("combined_score")
+  riskLevel       RiskLevel  @map("risk_level")
+  action          RiskAction @default(NONE)
+  evaluatedAt     DateTime   @default(now()) @map("evaluated_at")
+  explanations    Json?
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([evaluatedAt])
+  @@map("risk_assessments")
+}
+
+enum RiskAction {
+  NONE
+  STEP_UP_REQUIRED
+  SESSION_REVOKED
+}
+
+enum BaselineStatus {
+  COLLECTING
+  ESTABLISHED
+  FAILED
+}
+
+model AuditLog {
+  id        String      @id @default(uuid())
+  userId    String?     @map("user_id")
+  sessionId String?     @map("session_id")
+  action    AuditAction
+  details   Json?
+  ipAddress String?     @map("ip_address")
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum SessionState {
+  INITIALIZING_BASELINE
+  ACTIVE_MONITORING
+  STEP_UP_REQUIRED
+  REVOKED
+  ACTIVE
+  SUSPICIOUS
+  TERMINATED
+  EXPIRED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  REGISTER
+  SESSION_START
+  SESSION_END
+  BEHAVIOUR_INGESTED
+  RISK_EVALUATED
+  RISK_ESCALATED
+  BASELINE_CREATED
+  BASELINE_UPDATED
+  SETTINGS_CHANGED
+  STEP_UP_REQUIRED
+  STEP_UP_VERIFIED
+  SESSION_REVOKED
+  ML_MODEL_TRAINED
+  ML_TRAINING_FAILED
+}
+
+model Experiment {
+  id                 String          @id @default(uuid())
+  name               String
+  description        String?
+  status             String          @default("RUNNING") // RUNNING, COMPLETED
+  groundTruth        String          @map("ground_truth") // BENIGN, HIJACKED
+  attackInjected     Boolean         @default(false) @map("attack_injected")
+  attackInjectedAt   DateTime?       @map("attack_injected_at")
+  startedAt          DateTime        @default(now()) @map("started_at")
+  endedAt            DateTime?       @map("ended_at")
+  sessionId          String?         @map("session_id")
+  session            Session?        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  // Trial evaluation metrics
+  truePositive       Boolean?        @map("true_positive")
+  trueNegative       Boolean?        @map("true_negative")
+  falsePositive      Boolean?        @map("false_positive")
+  falseNegative      Boolean?        @map("false_negative")
+  detectionAccuracy  Float?          @map("detection_accuracy")
+  falsePositiveRate  Float?          @map("false_positive_rate")
+  detectionLatencyMs Int?            @map("detection_latency_ms")
+  responseLatencyMs  Int?            @map("response_latency_ms")
+
+  logs               ExperimentLog[]
+
+  @@map("experiments")
+}
+
+model ExperimentLog {
+  id             String     @id @default(uuid())
+  experimentId   String     @map("experiment_id")
+  packetSequence Int        @map("packet_sequence")
+  timestamp      DateTime   @default(now())
+  anomalyScore   Float      @map("anomaly_score")
+  driftScore     Float      @map("drift_score")
+  combinedScore  Float      @map("combined_score")
+  predictedLabel String     @map("predicted_label") // BENIGN, SUSPICIOUS, ATTACK
+  groundTruth    String     @map("ground_truth")    // BENIGN, ATTACK
+  action         String     @map("action")          // NONE, STEP_UP_REQUIRED, SESSION_REVOKED
+  receivedAt     DateTime   @default(now()) @map("received_at")
+  explanations   Json?
+
+  experiment     Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  @@map("experiment_logs")
+}
+
+model SystemSettings {
+  id              String   @id @default("global")
+  mediumThreshold Float    @default(0.4) @map("medium_threshold")
+  highThreshold   Float    @default(0.7) @map("high_threshold")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}

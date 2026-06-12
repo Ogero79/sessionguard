@@ -1,0 +1,25 @@
+{
+  "name": "sessionguard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-driven continuous identity protection system for detecting session hijacking",
+  "scripts": {
+    "dev:frontend": "pnpm --filter @sessionguard/frontend dev",
+    "dev:backend": "pnpm --filter @sessionguard/backend dev",
+    "dev:ml": "pnpm --filter @sessionguard/ml-service dev",
+    "build": "pnpm -r build",
+    "build:frontend": "pnpm --filter @sessionguard/frontend build",
+    "build:backend": "pnpm --filter @sessionguard/backend build",
+    "db:generate": "pnpm --filter @sessionguard/prisma generate",
+    "db:migrate": "pnpm --filter @sessionguard/prisma migrate",
+    "db:push": "pnpm --filter @sessionguard/prisma db:push",
+    "db:seed": "pnpm --filter @sessionguard/prisma seed",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r exec rm -rf node_modules dist .next .turbo"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@9.1.0"
+}
