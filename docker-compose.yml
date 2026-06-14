@@ -23,6 +23,7 @@ services:
     build:
       context: .
       dockerfile: apps/ml-service/Dockerfile
+      network: host
     container_name: sessionguard_ml
     restart: unless-stopped
     ports:
@@ -42,6 +43,7 @@ services:
     build:
       context: .
       dockerfile: apps/backend/Dockerfile
+      network: host
     container_name: sessionguard_backend
     restart: unless-stopped
     depends_on:
@@ -62,8 +64,8 @@ services:
     # Run migrations then seed then start
     command: >
       sh -c "
-        node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma &&
-        node_modules/.bin/prisma db seed &&
+        pnpm --filter @sessionguard/backend exec prisma migrate deploy --schema=../../prisma/schema.prisma &&
+        node prisma/dist/seed.js &&
         node apps/backend/dist/index.js
       "
     healthcheck:
@@ -77,6 +79,7 @@ services:
     build:
       context: .
       dockerfile: apps/frontend/Dockerfile
+      network: host
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
     container_name: sessionguard_frontend

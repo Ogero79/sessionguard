@@ -2,12 +2,17 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install pnpm via npm (more resilient than corepack on flaky networks)
+RUN npm install -g pnpm@9.1.0
 
+# Copy ALL workspace manifests so pnpm lockfile matches
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY packages/shared-types/package.json ./packages/shared-types/
 COPY packages/behavioural-sdk/package.json ./packages/behavioural-sdk/
 COPY apps/frontend/package.json ./apps/frontend/
+COPY apps/backend/package.json ./apps/backend/
+COPY apps/ml-service/package.json ./apps/ml-service/
+COPY prisma/package.json ./prisma/
 
 RUN pnpm install --frozen-lockfile
 
@@ -15,15 +20,13 @@ RUN pnpm install --frozen-lockfile
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@9.1.0
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages/shared-types/node_modules ./packages/shared-types/node_modules
-COPY --from=deps /app/packages/behavioural-sdk/node_modules ./packages/behavioural-sdk/node_modules
-COPY --from=deps /app/apps/frontend/node_modules ./apps/frontend/node_modules
+# Copy the entire installed workspace from deps (preserves pnpm symlink structure)
+COPY --from=deps /app ./
 
 # Copy workspace config and base tsconfig
-COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
+COPY tsconfig.base.json ./
 
 # Copy shared-types source and build it first (dependency of behavioural-sdk)
 COPY packages/shared-types ./packages/shared-types

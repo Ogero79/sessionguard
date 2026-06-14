@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, Literal
 
 
@@ -13,6 +13,7 @@ class TrainBaselineRequest(BaseModel):
 
 
 class TrainBaselineResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     session_id: str
     model_id: str
     status: Literal["trained", "failed"]
@@ -27,6 +28,7 @@ class ScoreAnomalyRequest(BaseModel):
 
 
 class ScoreAnomalyResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     session_id: str
     anomaly_score: float = Field(..., description="0-1 normalized, higher = more anomalous")
     raw_score: float = Field(..., description="Raw IsolationForest decision_function output")
