@@ -21,6 +21,52 @@ export class SessionService {
     ipAddress: string,
     userAgent: string
   ): Promise<SessionStartResponse> {
+    const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;
+    const existingSession = await prisma.session.findFirst({
+      where: {
+        userId,
+        state: {
+          notIn: ["REVOKED", "TERMINATED", "EXPIRED"],
+        },
+      },
+      orderBy: { startedAt: "desc" },
+    });
+
+    if (existingSession) {
+      const elapsed = Date.now() - (existingSession.lastActivityAt?.getTime() ?? 0);
+      if (elapsed < INACTIVITY_TIMEOUT_MS) {
+        // Reuse the active session, updating its last activity timestamp
+        const updated = await prisma.session.update({
+          where: { id: existingSession.id },
+          data: { lastActivityAt: new Date() },
+        });
+
+        return {
+          sessionId: updated.id,
+          state: updated.state as SessionState,
+          startedAt: updated.startedAt.toISOString(),
+        };
+      } else {
+        // Mark the idle session as EXPIRED in the database
+        await prisma.session.update({
+          where: { id: existingSession.id },
+          data: {
+            state: "EXPIRED",
+            isMonitoringActive: false,
+            endedAt: new Date(),
+          },
+        });
+        await prisma.auditLog.create({
+          data: {
+            sessionId: existingSession.id,
+            userId,
+            action: "SESSION_END",
+            details: { reason: "Session expired due to inactivity during startSession" },
+          },
+        });
+      }
+    }
+
     const session = await prisma.session.create({
       data: {
         userId,

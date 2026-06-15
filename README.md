@@ -50,12 +50,18 @@ The fastest way to spin up the entire SessionGuard ecosystem (Postgres, Backend,
 
 1. **Prerequisites**: Ensure you have [Docker](https://www.docker.com/) and Docker Compose installed.
 2. **Start the environment**:
-   ```bash
-   docker compose up --build
-   ```
+   * **For Single-Machine Testing (localhost)**:
+     ```bash
+     docker compose up --build
+     ```
+   * **For Local Network Testing (Multi-Device/Colleague)**:
+     Find your server machine's local IP address (e.g., `192.168.1.50`) and compile with it:
+     ```bash
+     CORS_ORIGIN=http://192.168.1.50:3000 NEXT_PUBLIC_API_URL=http://192.168.1.50:4000 docker compose up --build
+     ```
 3. **Seeding**: The backend container automatically runs migrations and seeds the database on startup.
 4. **Accessing the applications**:
-   - **Frontend**: [http://localhost:3000](http://localhost:3000)
+   - **Frontend**: [http://localhost:3000](http://localhost:3000) (or `http://<YOUR_LOCAL_IP>:3000` from another device on the network)
    - **Backend API**: [http://localhost:4000](http://localhost:4000)
    - **ML Service**: [http://localhost:8000](http://localhost:8000)
 

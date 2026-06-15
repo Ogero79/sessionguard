@@ -330,9 +330,9 @@ export default function ExperimentsPage() {
                       onChange={(e) => setNewTrialSessionId(e.target.value)}
                       className="w-full px-3 py-2 text-sm rounded bg-gray-850 border border-gray-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white"
                     >
-                      <option value="">Select active session...</option>
+                      <option className="bg-gray-900 text-white" value="">Select active session...</option>
                       {activeSessions.map((s) => (
-                        <option key={s.sessionId} value={s.sessionId}>
+                        <option className="bg-gray-900 text-white" key={s.sessionId} value={s.sessionId}>
                           {s.displayName} ({s.sessionId.slice(0, 6)}…)
                         </option>
                       ))}
@@ -347,8 +347,8 @@ export default function ExperimentsPage() {
                       onChange={(e) => setNewTrialGT(e.target.value as any)}
                       className="w-full px-3 py-2 text-sm rounded bg-gray-850 border border-gray-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white"
                     >
-                      <option value="HIJACKED">HIJACKED (Inject Attack Mid-run)</option>
-                      <option value="BENIGN">BENIGN (Static baseline control)</option>
+                      <option className="bg-gray-900 text-white" value="HIJACKED">HIJACKED (Inject Attack Mid-run)</option>
+                      <option className="bg-gray-900 text-white" value="BENIGN">BENIGN (Static baseline control)</option>
                     </select>
                   </div>
                 </div>

@@ -82,7 +82,7 @@ export function RiskProvider({ children }: { children: React.ReactNode }) {
 
   // Start polling when authenticated, stop on logout.
   useEffect(() => {
-    if (!user || !token) {
+    if (!user || !token || user.role === "ADMIN") {
       setStatus(null);
       revokedHandledRef.current = false;
       return;

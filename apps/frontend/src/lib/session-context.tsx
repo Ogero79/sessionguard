@@ -31,7 +31,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const prevPathRef = useRef<string>(pathname);
 
   const startSession = useCallback(async () => {
-    if (!token || startedRef.current) return;
+    if (!token || startedRef.current || user?.role === "ADMIN") return;
     startedRef.current = true;
 
     try {
@@ -56,11 +56,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     } catch {
       startedRef.current = false;
     }
-  }, [token, pathname]);
+  }, [token, pathname, user]);
 
   // Start/stop tracking when auth state changes
   useEffect(() => {
-    if (user && token) {
+    if (user && token && user.role !== "ADMIN") {
       startSession();
     }
     return () => {

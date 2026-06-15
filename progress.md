@@ -41,11 +41,17 @@ To get the project into a fully compile-ready state, the following dependencies 
 2. **Prisma Client Synchronisation**:
    - Ran `pnpm db:generate` to compile database schemas and sync types. This resolved multiple Prisma model type mismatches (e.g. `BaselineModel` properties, `RiskAssessment` model) in the backend.
 3. **Backend Type Portability Resolution**:
-   - Added `"declaration": false` and `"declarationMap": false` overrides inside [tsconfig.json](file:///c:/dev/sessionguard/apps/backend/tsconfig.json) for the backend application, resolving type serialization issues (`TS2742`).
+   - Added `"declaration": false` and `"declarationMap": false` overrides inside [tsconfig.json](file:///home/ogero/Documents/dev/sessionguard/apps/backend/tsconfig.json) for the backend application, resolving type serialization issues (`TS2742`).
 4. **Next.js CSR Prerendering Bailout Fix**:
-   - Extracted the login search parameter check in [page.tsx](file:///c:/dev/sessionguard/apps/frontend/src/app/login/page.tsx) and wrapped the form component inside a React `<Suspense>` boundary. This resolved the Next.js static prerender compilation error.
+   - Extracted the login search parameter check in [page.tsx](file:///home/ogero/Documents/dev/sessionguard/apps/frontend/src/app/login/page.tsx) and wrapped the form component inside a React `<Suspense>` boundary. This resolved the Next.js static prerender compilation error.
+5. **Active Session Reuse and Synchronization**:
+   - Fixed a critical vulnerability and session-drift bug in [session.service.ts](file:///home/ogero/Documents/dev/sessionguard/apps/backend/src/services/session.service.ts). Previously, page refreshes or token imports (such as in hijacking) started new baseline sessions, bypassing risk checks. Now, the backend reuses active sessions within the 30-minute inactivity window, forcing correct telemetry sharing.
+6. **Administrator Tracking Exclusions**:
+   - Resolved a conflict where the admin's own activity triggered step-up challenges. Disabled monitored session creation and risk polling for the `ADMIN` role in [session-context.tsx](file:///home/ogero/Documents/dev/sessionguard/apps/frontend/src/lib/session-context.tsx) and [risk-context.tsx](file:///home/ogero/Documents/dev/sessionguard/apps/frontend/src/lib/risk-context.tsx).
+7. **Cross-Browser Option Styling Fix**:
+   - Addressed invisible text inside dropdown lists on Linux web browsers by explicitly applying background and text classes (`className="bg-gray-900 text-white"`) to the select options in [page.tsx](file:///home/ogero/Documents/dev/sessionguard/apps/frontend/src/app/internal/experiments/page.tsx).
 
-As a result of these changes, running **`pnpm build`** now compiles the entire monorepo successfully.
+As a result of these changes, running **`docker compose up --build`** compiles the entire monorepo and enables flawless multi-browser session hijacking demonstrations.
 
 ---
 

@@ -24,17 +24,17 @@ graph TD
 ```
 
 ### Directory Structure
-- [packages/behavioural-sdk](file:///c:/dev/sessionguard/packages/behavioural-sdk): The browser-side tracker. Captures, throttles, aggregates, and transmits telemetry.
-- [packages/shared-types](file:///c:/dev/sessionguard/packages/shared-types): Common interfaces and data models shared between the frontend, backend, and SDK.
-- [apps/backend](file:///c:/dev/sessionguard/apps/backend): Telemetry pipeline ingestion, database sync (Prisma), statistical calculations, and authentication control.
-- [apps/frontend](file:///c:/dev/sessionguard/apps/frontend): React Next.js application representing both the standard protected portal and the admin researcher dashboard.
-- [apps/ml-service](file:///c:/dev/sessionguard/apps/ml-service): Python FastAPI microservice that manages per-session `IsolationForest` models.
+- [packages/behavioural-sdk](file:///home/ogero/Documents/dev/sessionguard/packages/behavioural-sdk): The browser-side tracker. Captures, throttles, aggregates, and transmits telemetry.
+- [packages/shared-types](file:///home/ogero/Documents/dev/sessionguard/packages/shared-types): Common interfaces and data models shared between the frontend, backend, and SDK.
+- [apps/backend](file:///home/ogero/Documents/dev/sessionguard/apps/backend): Telemetry pipeline ingestion, database sync (Prisma), statistical calculations, and authentication control.
+- [apps/frontend](file:///home/ogero/Documents/dev/sessionguard/apps/frontend): React Next.js application representing both the standard protected portal and the admin researcher dashboard.
+- [apps/ml-service](file:///home/ogero/Documents/dev/sessionguard/apps/ml-service): Python FastAPI microservice that manages per-session `IsolationForest` models.
 
 ---
 
-## 2. Browser Telemetry Collection ([behavioural-sdk](file:///c:/dev/sessionguard/packages/behavioural-sdk))
+## 2. Browser Telemetry Collection ([behavioural-sdk](file:///home/ogero/Documents/dev/sessionguard/packages/behavioural-sdk))
 
-Telemetry collection starts in the browser. The [BehaviouralTracker](file:///c:/dev/sessionguard/packages/behavioural-sdk/src/tracker.ts) class hooks into global window and document listeners to capture user interaction events:
+Telemetry collection starts in the browser. The [BehaviouralTracker](file:///home/ogero/Documents/dev/sessionguard/packages/behavioural-sdk/src/tracker.ts) class hooks into global window and document listeners to capture user interaction events:
 
 1. **Keyboard Events**: Captures `keydown` and `keyup` to calculate:
    - **Key Hold Duration**: How long a key remains pressed.
@@ -44,12 +44,12 @@ Telemetry collection starts in the browser. The [BehaviouralTracker](file:///c:/
 4. **Scroll Events**: Monitors scroll directions and scroll speed velocities.
 5. **Page Navigation & Focus**: Tracks active page routes, tab focus swaps (`blur` / `focus`), and session inactivity.
 
-### Packet Aggregation ([batcher.ts](file:///c:/dev/sessionguard/packages/behavioural-sdk/src/batcher.ts))
+### Packet Aggregation ([batcher.ts](file:///home/ogero/Documents/dev/sessionguard/packages/behavioural-sdk/src/batcher.ts))
 Rather than streaming events individually, the SDK buffers them. Every **10 seconds** (configurable), the `PacketBatcher` aggregates the raw event buffer into a `FeatureSummary` packet, calculating statistical aggregates (averages, counts, variances, and pauses) before calling `BehaviourSender` to POST the data.
 
 ---
 
-## 3. Ingestion & Feature Extraction ([apps/backend](file:///c:/dev/sessionguard/apps/backend))
+## 3. Ingestion & Feature Extraction ([apps/backend](file:///home/ogero/Documents/dev/sessionguard/apps/backend))
 
 The backend exposes `POST /api/session/behaviour` to accept telemetry packets. 
 
@@ -58,10 +58,10 @@ The backend exposes `POST /api/session/behaviour` to accept telemetry packets.
 const featureVector = featureExtractionService.extract(packet.features, windowDurationMs);
 ```
 
-The [FeatureExtractionService](file:///c:/dev/sessionguard/apps/backend/src/services/feature-extraction.service.ts) transforms the aggregated metrics into a standardized **16-dimensional ML-ready feature vector** (`BehaviouralFeatureVector`):
+The [FeatureExtractionService](file:///home/ogero/Documents/dev/sessionguard/apps/backend/src/services/feature-extraction.service.ts) transforms the aggregated metrics into a standardized **15-dimensional ML-ready feature vector** (`BehaviouralFeatureVector`):
 
 ```typescript
-// 16 key dimensions analyzed for anomaly detection
+// 15 key dimensions analyzed for anomaly detection
 export const FEATURE_KEYS = [
   "avgInterKeyInterval", "stdInterKeyInterval", "avgHoldDuration", "typingBurstRate", "typingIdleRatio",
   "avgMouseVelocity", "mouseAccelerationVariance", "clickFrequency", "scrollFrequency", "idleMouseRatio",
@@ -86,11 +86,11 @@ When a session starts, it cycles through three major security states:
 (Step-Up Re-Auth)
 ```
 
-### Phase 1: Baseline Establishment ([baseline.service.ts](file:///c:/dev/sessionguard/apps/backend/src/services/baseline.service.ts))
+### Phase 1: Baseline Establishment ([baseline.service.ts](file:///home/ogero/Documents/dev/sessionguard/apps/backend/src/services/baseline.service.ts))
 During the initial `INITIALIZING_BASELINE` state (requiring 18 packets, equivalent to ~3 minutes of active usage), the backend collects the feature vectors without assessing risk. 
 
 Once 18 packets are collected, it computes:
-1. **Feature Means**: The average value for each of the 16 features.
+1. **Feature Means**: The average value for each of the 15 features.
 2. **Standard Deviations**: The variation of each feature.
 3. **Acceptable Ranges**: Tolerances defined as `Mean ± 2 * StdDev`.
 
@@ -100,7 +100,7 @@ The FastAPI service trains a custom **IsolationForest** model (`scikit-learn`) o
 
 ---
 
-## 5. Hybrid Risk Scoring Pipeline ([risk.service.ts](file:///c:/dev/sessionguard/apps/backend/src/services/risk.service.ts))
+## 5. Hybrid Risk Scoring Pipeline ([risk.service.ts](file:///home/ogero/Documents/dev/sessionguard/apps/backend/src/services/risk.service.ts))
 
 Once the baseline is established, the session transitions to `ACTIVE_MONITORING`. Every new 10-second telemetry packet triggers a hybrid risk assessment:
 
@@ -110,9 +110,9 @@ The backend calls `POST /score-anomaly` on the Python ML service.
 - It extracts the raw anomaly decision score (`decision_function`) and normalizes it to a `[0, 1]` range (where 1.0 is highly anomalous) using min-max bounds derived during the baseline training distribution.
 
 ### B. Statistical Z-Score Drift (30% Weight)
-The backend evaluates statistical deviation ([drift.service.ts](file:///c:/dev/sessionguard/apps/backend/src/services/drift.service.ts)) against the user's initial baseline:
+The backend evaluates statistical deviation ([drift.service.ts](file:///home/ogero/Documents/dev/sessionguard/apps/backend/src/services/drift.service.ts)) against the user's initial baseline:
 $$Z = \frac{|Observed - Mean|}{StdDev}$$
-The mean absolute Z-score across all 16 dimensions is normalized by a factor of 3.0 (i.e., a sustained deviation of 3 standard deviations indicates high drift, remapped to 1.0).
+The mean absolute Z-score across all 15 dimensions is normalized by a factor of 3.0 (i.e., a sustained deviation of 3 standard deviations indicates high drift, remapped to 1.0).
 
 ### C. Combined Risk Score
 The final combined risk score is calculated as:
@@ -138,4 +138,4 @@ The system maps the combined risk score against configurable thresholds (default
 
 - **How to edit thresholds**: Go to the **Settings** panel on the frontend, or send a `POST /api/experiment/settings` request to change `mediumThreshold` and `highThreshold`.
 - **How to simulate hijacking / anomaly**: Start an experiment on the Researcher Dashboard and inject an "attack" state. This will spoof features and trigger step-up or revocation automatically, showing latency and accuracy metrics.
-- **Troubleshooting client/server JWT issues**: If a JWT expires, the API client helper ([api.ts](file:///c:/dev/sessionguard/apps/frontend/src/lib/api.ts)) will detect a 401/403 response, dispatch an `auth:expired` event, and trigger a clean login redirection banner (`/login?reason=session_expired`).
+- **Troubleshooting client/server JWT issues**: If a JWT expires, the API client helper ([api.ts](file:///home/ogero/Documents/dev/sessionguard/apps/frontend/src/lib/api.ts)) will detect a 401/403 response, dispatch an `auth:expired` event, and trigger a clean login redirection banner (`/login?reason=session_expired`).
