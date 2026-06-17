@@ -109,13 +109,31 @@ export class RiskService {
     }).sort((a, b) => b.zScore - a.zScore);
 
     // 4. Classify
-    const riskLevel: RiskLevelType =
-      combinedScore >= settings.highThreshold
-        ? "HIGH"
-        : combinedScore >= settings.mediumThreshold
-        ? "MEDIUM"
-        : "LOW";
-    const action: RiskAction = decideAction(riskLevel);
+    // Apply a 25-second cool-down/refractory period immediately following a successful
+    // step-up re-authentication to prevent duplicate challenges from queued/modal telemetry.
+    const coolDownPeriodMs = 25 * 1000;
+    const recentVerification = await prisma.auditLog.findFirst({
+      where: {
+        sessionId,
+        action: "STEP_UP_VERIFIED",
+        createdAt: {
+          gte: new Date(Date.now() - coolDownPeriodMs),
+        },
+      },
+    });
+
+    let riskLevel: RiskLevelType = "LOW";
+    let action: RiskAction = "NONE";
+
+    if (!recentVerification) {
+      riskLevel =
+        combinedScore >= settings.highThreshold
+          ? "HIGH"
+          : combinedScore >= settings.mediumThreshold
+          ? "MEDIUM"
+          : "LOW";
+      action = decideAction(riskLevel);
+    }
 
     const evaluatedAt = new Date();
 

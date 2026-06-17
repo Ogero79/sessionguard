@@ -1,23 +1,11 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
 import { experimentService } from "../services/experiment.service";
-import { authenticateToken } from "../middleware/auth";
+import { authenticateToken, requireAdmin } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { prisma } from "../config/prisma";
 
 const router = Router();
-
-function requireAdmin(req: Request, res: Response, next: NextFunction): void {
-  if (req.user?.role !== "ADMIN") {
-    res.status(403).json({
-      success: false,
-      error: "Researcher access required",
-      timestamp: new Date().toISOString(),
-    });
-    return;
-  }
-  next();
-}
 
 const startSchema = z.object({
   name: z.string().min(1, "Experiment name is required"),

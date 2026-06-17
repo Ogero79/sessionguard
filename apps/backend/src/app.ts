@@ -8,6 +8,7 @@ import authRoutes from "./routes/auth.routes";
 import sessionRoutes from "./routes/session.routes";
 import riskRoutes from "./routes/risk.routes";
 import experimentRoutes from "./routes/experiment.routes";
+import userRoutes from "./routes/user.routes";
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/session", sessionRoutes);
 app.use("/api/risk", riskRoutes);
 app.use("/api/experiment", experimentRoutes);
+app.use("/api/user", userRoutes);
 
 app.use(errorHandler);
 

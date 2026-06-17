@@ -8,12 +8,12 @@ import { StepUpModal } from "@/components/step-up-modal";
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      <SessionProvider>
-        <RiskProvider>
+      <RiskProvider>
+        <SessionProvider>
           {children}
           <StepUpModal />
-        </RiskProvider>
-      </SessionProvider>
+        </SessionProvider>
+      </RiskProvider>
     </AuthProvider>
   );
 }

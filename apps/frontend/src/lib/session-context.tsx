@@ -13,6 +13,7 @@ import { BehaviouralTracker } from "@sessionguard/behavioural-sdk";
 import type { SessionStartResponse } from "@sessionguard/shared-types";
 import { api } from "./api";
 import { useAuth } from "./auth-context";
+import { useRisk } from "./risk-context";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -24,8 +25,10 @@ const SessionContext = createContext<SessionContextValue | undefined>(undefined)
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const { user, token } = useAuth();
+  const { stepUpRequired } = useRisk();
   const pathname = usePathname();
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [tracker, setTracker] = useState<BehaviouralTracker | null>(null);
   const trackerRef = useRef<BehaviouralTracker | null>(null);
   const startedRef = useRef(false);
   const prevPathRef = useRef<string>(pathname);
@@ -42,21 +45,24 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       if (res.success && res.data) {
         setSessionId(res.data.sessionId);
 
-        const tracker = new BehaviouralTracker({
+        const trackerInstance = new BehaviouralTracker({
           sessionId: res.data.sessionId,
           apiUrl: API_URL,
           authToken: token,
           batchIntervalMs: 10_000,
           enabled: true,
         });
-        tracker.setCurrentRoute(pathname);
-        tracker.start();
-        trackerRef.current = tracker;
+        trackerInstance.setCurrentRoute(pathname);
+        if (!stepUpRequired) {
+          trackerInstance.start();
+        }
+        trackerRef.current = trackerInstance;
+        setTracker(trackerInstance);
       }
     } catch {
       startedRef.current = false;
     }
-  }, [token, pathname, user]);
+  }, [token, pathname, user, stepUpRequired]);
 
   // Start/stop tracking when auth state changes
   useEffect(() => {
@@ -67,18 +73,30 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       if (trackerRef.current) {
         trackerRef.current.stop();
         trackerRef.current = null;
+        setTracker(null);
       }
       startedRef.current = false;
     };
   }, [user, token, startSession]);
 
+  // Pause/resume tracking during step-up challenges
+  useEffect(() => {
+    if (!tracker) return;
+
+    if (stepUpRequired) {
+      tracker.stop();
+    } else {
+      tracker.start();
+    }
+  }, [tracker, stepUpRequired]);
+
   // Track route changes as navigation events
   useEffect(() => {
-    const tracker = trackerRef.current;
-    if (!tracker) return;
+    const activeTracker = trackerRef.current;
+    if (!activeTracker) return;
     const prev = prevPathRef.current;
     if (prev !== pathname) {
-      tracker.recordNavigation(prev, pathname, "push");
+      activeTracker.recordNavigation(prev, pathname, "push");
       prevPathRef.current = pathname;
     }
   }, [pathname]);

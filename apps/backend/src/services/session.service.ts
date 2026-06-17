@@ -308,6 +308,11 @@ export class SessionService {
       },
     });
 
+    // Adapt the baseline to incorporate the recently verified benign behavior
+    void baselineService.adaptBaseline(session.id).catch((err) => {
+      console.error(`[session] failed to adapt baseline on stepup verification:`, err);
+    });
+
     return {
       sessionId: updated.id,
       state: updated.state as SessionState,

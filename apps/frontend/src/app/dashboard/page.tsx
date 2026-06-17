@@ -12,14 +12,144 @@ import {
   ArrowRight,
   StickyNote,
   AlertCircle,
+  Users,
+  Activity,
+  Beaker,
 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  
   return (
     <AppShell>
-      <DashboardContent />
+      {user?.role === "ADMIN" ? <AdminDashboardContent /> : <DashboardContent />}
     </AppShell>
+  );
+}
+
+function AdminDashboardContent() {
+  const { user } = useAuth();
+  const [sessionsCount, setSessionsCount] = useState<number | null>(null);
+  const [usersCount, setUsersCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const [sessionsRes, usersRes] = await Promise.all([
+          api.get<any[]>("/api/session/telemetry/active"),
+          api.get<any[]>("/api/user"),
+        ]);
+        if (sessionsRes.success && sessionsRes.data) {
+          setSessionsCount(sessionsRes.data.length);
+        }
+        if (usersRes.success && usersRes.data) {
+          setUsersCount(usersRes.data.length);
+        }
+      } catch (err) {
+        console.error("Failed to load admin stats", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadStats();
+  }, []);
+
+  const adminStats = [
+    {
+      label: "Active Monitored Sessions",
+      value: sessionsCount !== null ? sessionsCount : "...",
+      icon: Activity,
+      color: "text-brand-600",
+      bg: "bg-brand-50",
+      href: "/internal/session-monitor",
+    },
+    {
+      label: "Registered Users",
+      value: usersCount !== null ? usersCount : "...",
+      icon: Users,
+      color: "text-success-600",
+      bg: "bg-success-50",
+      href: "/internal/users",
+    },
+    {
+      label: "Experiment Baseline Pipeline",
+      value: "Active",
+      icon: Beaker,
+      color: "text-purple-600",
+      bg: "bg-purple-50",
+      href: "/internal/experiments",
+    },
+  ];
+
+  const greeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 18) return "Good afternoon";
+    return "Good evening";
+  };
+
+  return (
+    <div className="max-w-6xl">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-ink-900">
+          {greeting()}, {user?.displayName?.split(" ")[0]}
+        </h1>
+        <p className="text-sm text-ink-500 mt-1">
+          Welcome to the TaskFlow Admin Control Console. Manage system settings, users, and telemetry baseline models.
+        </p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {adminStats.map((s) => (
+          <Link
+            href={s.href}
+            key={s.label}
+            className="card p-5 hover:border-brand-300 transition-colors block"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[13px] font-medium text-ink-500">
+                {s.label}
+              </span>
+              <div className={`p-2 rounded-lg ${s.bg}`}>
+                <s.icon className={`h-4 w-4 ${s.color}`} />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-ink-900">{s.value}</p>
+          </Link>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="card p-6 mb-8">
+        <h2 className="text-sm font-semibold text-ink-800 mb-4">Quick Management Actions</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Link
+            href="/internal/users"
+            className="btn-primary flex items-center justify-center gap-2 py-3 text-sm"
+          >
+            <Users className="h-4 w-4" /> Manage User Database
+          </Link>
+          <Link
+            href="/internal/session-monitor"
+            className="btn-secondary flex items-center justify-center gap-2 py-3 text-sm"
+          >
+            <Activity className="h-4 w-4" /> View Live Telemetry
+          </Link>
+          <Link
+            href="/internal/experiments"
+            className="btn-secondary flex items-center justify-center gap-2 py-3 text-sm"
+          >
+            <Beaker className="h-4 w-4" /> Run Adversarial Tests
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }
 

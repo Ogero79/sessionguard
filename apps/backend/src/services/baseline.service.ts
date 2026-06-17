@@ -224,6 +224,56 @@ export class BaselineService {
   }
 
   /**
+   * Re-calculate the baseline profile and retrain the ML model using all
+   * behavioural packets collected for the session so far.
+   * Typically triggered after a successful step-up verification.
+   */
+  async adaptBaseline(sessionId: string): Promise<void> {
+    // Get all ingested behavioral packets for this session
+    const packets = await prisma.behaviouralData.findMany({
+      where: { sessionId },
+      orderBy: { packetSequence: "asc" },
+      select: { featureVectorJson: true },
+    });
+
+    const vectors: BehaviouralFeatureVector[] = packets
+      .filter((p) => p.featureVectorJson !== null)
+      .map((p) => p.featureVectorJson as unknown as BehaviouralFeatureVector);
+
+    if (vectors.length < 5) return; // not enough data to adapt
+
+    const profile = this.computeProfile(vectors);
+    const now = new Date();
+
+    await prisma.baselineModel.update({
+      where: { sessionId },
+      data: {
+        packetsUsed: vectors.length,
+        featureMeansJson: profile.featureMeans as object,
+        featureStdJson: profile.featureStd as object,
+        featureRangesJson: profile.featureRanges as object,
+        establishedAt: now,
+        mlModelStatus: "TRAINING",
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        sessionId,
+        action: "BASELINE_UPDATED",
+        details: {
+          reason: "STEP_UP_VERIFIED",
+          packetsUsed: vectors.length,
+          featureCount: FEATURE_KEYS.length,
+        },
+      },
+    });
+
+    // Retrain the IsolationForest model with the expanded benign dataset
+    void this.trainMLModel(sessionId, vectors);
+  }
+
+  /**
    * Get the required packet count for baseline.
    */
   get requiredPackets(): number {

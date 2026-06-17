@@ -119,14 +119,11 @@ async def score_anomaly(request: ScoreAnomalyRequest) -> ScoreAnomalyResponse:
     # Normalize:
     # - lower raw_score → more anomalous → higher anomaly_score
     # - clamp to [0, 1] using training distribution bounds.
-    score_range = stored.raw_score_max - stored.raw_score_min
-    if score_range <= 1e-9:
-        # Degenerate baseline; fall back to a sigmoid on raw score.
-        anomaly_score = 1.0 / (1.0 + float(np.exp(raw_score)))
-    else:
-        # Linear remap: raw_score == raw_max → 0 (normal), raw_score == raw_min → 1 (anomalous)
-        anomaly_score = (stored.raw_score_max - raw_score) / score_range
-
+    # - apply a minimum score_range threshold of 0.15 to avoid over-sensitizing highly homogeneous baselines.
+    score_range = max(stored.raw_score_max - stored.raw_score_min, 0.15)
+    
+    # Linear remap: raw_score == raw_max → 0 (normal), raw_score == raw_min → 1 (anomalous)
+    anomaly_score = (stored.raw_score_max - raw_score) / score_range
     anomaly_score = float(np.clip(anomaly_score, 0.0, 1.0))
 
     return ScoreAnomalyResponse(
