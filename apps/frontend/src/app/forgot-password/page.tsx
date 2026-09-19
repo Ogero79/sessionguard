@@ -21,7 +21,7 @@ export default function ForgotPasswordPage() {
             <Layers className="h-5 w-5 text-white" />
           </div>
           <span className="text-lg font-semibold tracking-tight text-ink-900">
-            TaskFlow
+            SessionGuard
           </span>
         </div>
 

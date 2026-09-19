@@ -39,7 +39,7 @@ function LoginForm() {
           <Layers className="h-5 w-5 text-white" />
         </div>
         <span className="text-lg font-semibold tracking-tight text-ink-900">
-          TaskFlow
+          SessionGuard
         </span>
       </div>
 
@@ -157,7 +157,7 @@ export default function LoginPage() {
             <Layers className="h-5 w-5 text-white" />
           </div>
           <span className="text-lg font-semibold tracking-tight">
-            TaskFlow
+            SessionGuard
           </span>
         </div>
         <div>
@@ -172,7 +172,7 @@ export default function LoginPage() {
           </p>
         </div>
         <p className="text-brand-400 text-xs">
-          &copy; 2026 TaskFlow Workspace. All rights reserved.
+          &copy; 2025 SessionGuard Contributors. Apache-2.0 License.
         </p>
       </div>
 

@@ -1,0 +1,185 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Shared Packages ──────────────────────────────────────────────────────────
+  build-packages:
+    name: Build Shared Packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build shared-types
+        run: pnpm --filter @sessionguard/shared-types build
+
+      - name: Build behavioural-sdk
+        run: pnpm --filter @sessionguard/behavioural-sdk build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-dist
+          path: |
+            packages/shared-types/dist
+            packages/behavioural-sdk/dist
+          retention-days: 1
+
+  # ── TypeScript Type-Check ────────────────────────────────────────────────────
+  typecheck:
+    name: TypeScript Check
+    runs-on: ubuntu-latest
+    needs: build-packages
+    strategy:
+      matrix:
+        package:
+          - "@sessionguard/backend"
+          - "@sessionguard/frontend"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages-dist
+          path: packages
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Type-check ${{ matrix.package }}
+        run: pnpm --filter ${{ matrix.package }} exec tsc --noEmit
+
+  # ── Lint ─────────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: build-packages
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages-dist
+          path: packages
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Lint Backend
+        run: pnpm --filter @sessionguard/backend lint
+
+      - name: Lint Frontend
+        run: pnpm --filter @sessionguard/frontend lint
+
+  # ── Backend Tests ────────────────────────────────────────────────────────────
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    needs: build-packages
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages-dist
+          path: packages
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Run backend tests
+        run: pnpm --filter @sessionguard/backend test
+
+  # ── ML Service Tests ─────────────────────────────────────────────────────────
+  test-ml:
+    name: ML Service Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: apps/ml-service/requirements.txt
+
+      - name: Install dependencies
+        working-directory: apps/ml-service
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest httpx
+
+      - name: Run ML tests
+        working-directory: apps/ml-service
+        run: pytest app/test_main.py -v
+
+  # ── Docker Build Validation ──────────────────────────────────────────────────
+  docker-build:
+    name: Docker Build (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - service: backend
+            dockerfile: apps/backend/Dockerfile
+          - service: frontend
+            dockerfile: apps/frontend/Dockerfile
+          - service: ml-service
+            dockerfile: apps/ml-service/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ${{ matrix.service }}
+        run: docker build -f ${{ matrix.dockerfile }} . --tag sessionguard-${{ matrix.service }}:test

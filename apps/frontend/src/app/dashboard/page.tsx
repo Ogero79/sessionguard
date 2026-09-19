@@ -100,7 +100,7 @@ function AdminDashboardContent() {
           {greeting()}, {user?.displayName?.split(" ")[0]}
         </h1>
         <p className="text-sm text-ink-500 mt-1">
-          Welcome to the TaskFlow Admin Control Console. Manage system settings, users, and telemetry baseline models.
+          Welcome to the SessionGuard Admin Console. Manage system settings, users, and telemetry baseline models.
         </p>
       </div>
 

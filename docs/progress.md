@@ -18,7 +18,7 @@ The codebase is organized as a monorepo structured as follows:
     - `/internal/session-monitor`: Live telemetry dashboard showing all active sessions with risk level gauges, ML model status, and the last 10 risk assessments per session.
     - `/internal/experiments`: **Experimentation Lab** — the primary researcher interface. Allows administrators to: start a new trial linked to an active session, inject a simulated attack mid-trial, end a trial and compute TP/TN/FP/FN/accuracy/FPR/latency metrics, view per-packet score timeseries charts with configurable risk threshold overlay lines, and download experiment logs as CSV.
   - **Sidebar**: Role-adaptive navigation — the "Researcher Lab" section (Experiment Lab, Telemetry Monitor) is only rendered for `ADMIN` users.
-  - > **Branding note**: The frontend UI carries residual "TaskFlow" branding (logo text, page titles). This is intentional — it simulates a real-world SaaS application that SessionGuard would protect, keeping participants focused on normal work behaviour rather than the security layer.
+  - The sidebar navigation adapts to the user's role: the **Researcher Lab** section (Experiment Lab and Telemetry Monitor links) is only visible to users with the `ADMIN` role.
 - **`apps/backend`**: Express Application (TypeScript, Prisma ORM)
   - Manages session state machine, telemetry ingestion, baseline profile calculation, and risk evaluation.
 - **`apps/ml-service`**: FastAPI Service (Python, scikit-learn)

@@ -19,7 +19,7 @@ const GUIDES = [
   {
     icon: Zap,
     title: "Getting Started",
-    desc: "Learn the basics of TaskFlow Workspace",
+    desc: "Learn the basics of SessionGuard",
     articles: [
       "Creating your first task",
       "Navigating the dashboard",
@@ -124,7 +124,7 @@ function HelpContent() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-ink-900">Help & Resources</h1>
         <p className="text-sm text-ink-500 mt-0.5">
-          Find answers, guides, and documentation for TaskFlow Workspace
+          Find answers, guides, and documentation for SessionGuard
         </p>
       </div>
 

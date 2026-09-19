@@ -59,7 +59,7 @@ export function Sidebar() {
           <Layers className="h-4.5 w-4.5 text-white" />
         </div>
         <span className="text-[15px] font-semibold text-ink-900 tracking-tight">
-          TaskFlow
+          SessionGuard
         </span>
       </div>
 

@@ -2,6 +2,7 @@
   "name": "sessionguard",
   "version": "0.1.0",
   "private": true,
+  "license": "Apache-2.0",
   "description": "AI-driven continuous identity protection system for detecting session hijacking",
   "scripts": {
     "dev:frontend": "pnpm --filter @sessionguard/frontend dev",
@@ -15,6 +16,8 @@
     "db:push": "pnpm --filter @sessionguard/prisma db:push",
     "db:seed": "pnpm --filter @sessionguard/prisma seed",
     "lint": "pnpm -r lint",
+    "test": "pnpm --filter @sessionguard/backend test",
+    "test:coverage": "pnpm --filter @sessionguard/backend test:coverage",
     "clean": "pnpm -r exec rm -rf node_modules dist .next .turbo"
   },
   "engines": {

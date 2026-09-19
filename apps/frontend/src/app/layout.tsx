@@ -3,8 +3,8 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "TaskFlow Workspace",
-  description: "Your personal productivity workspace",
+  title: "SessionGuard",
+  description: "AI-driven continuous identity protection",
 };
 
 export default function RootLayout({
