@@ -50,7 +50,7 @@ The following areas are explicitly excluded from vulnerability reports:
 
 If you believe you have discovered a vulnerability or security flaw in SessionGuard, please disclose it privately by sending an email to:
 
-**[security@sessionguard.dev](mailto:security@sessionguard.dev)**
+**[brianogero704@gmail.com](mailto:brianogero704@gmail.com)**
 
 ### What to Include in Your Report
 

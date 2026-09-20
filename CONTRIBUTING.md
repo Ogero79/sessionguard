@@ -7,7 +7,7 @@ SessionGuard is an open-source, AI-driven continuous identity protection system 
 Whether you are fixing a bug, adding new telemetry collectors, refining ML anomaly detection models, enhancing the researcher experiment lab, or improving our documentation, your contributions make the project better for everyone.
 
 > [!IMPORTANT]
-> **Reporting Security Vulnerabilities**: If you discover a potential security vulnerability, please **DO NOT** create a public GitHub issue or pull request. Refer to our [SECURITY.md](file:///home/ogero/Documents/dev/sessionguard/SECURITY.md) and email [security@sessionguard.dev](mailto:security@sessionguard.dev) for coordinated private disclosure.
+> **Reporting Security Vulnerabilities**: If you discover a potential security vulnerability, please **DO NOT** create a public GitHub issue or pull request. Refer to our [SECURITY.md](file:///home/ogero/Documents/dev/sessionguard/SECURITY.md) and email [brianogero704@gmail.com](mailto:brianogero704@gmail.com) for coordinated private disclosure.
 
 All contributors are expected to uphold our [Code of Conduct](file:///home/ogero/Documents/dev/sessionguard/CODE_OF_CONDUCT.md). Please read it before participating.
 
@@ -443,7 +443,7 @@ All contributions are reviewed by maintainers before merging. During code review
 ## Community & Questions
 
 - **Code of Conduct**: [CODE_OF_CONDUCT.md](file:///home/ogero/Documents/dev/sessionguard/CODE_OF_CONDUCT.md)
-- **Security Inquiries**: [security@sessionguard.dev](mailto:security@sessionguard.dev)
-- **Code of Conduct Inquiries**: [conduct@sessionguard.dev](mailto:conduct@sessionguard.dev)
+- **Security Inquiries**: [brianogero704@gmail.com](mailto:brianogero704@gmail.com)
+- **Code of Conduct Inquiries**: [brianogero704@gmail.com](mailto:brianogero704@gmail.com)
 
 Thank you for helping us make session security continuous, intelligent, and open! :shield:
